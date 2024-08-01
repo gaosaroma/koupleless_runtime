@@ -14,11 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alipay.sofa.koupleless.common.api;
+package com.alipay.sofa.koupleless.arklet.tunnel.mqtt.model;
 
 /**
- * @author lianglipeng.llp@alibaba-inc.com
- * @version $Id: MainObjectFinder.java, v 0.1 2024年08月05日 12:05 立蓬 Exp $
+ * <p>Constants class.</p>
+ *
+ * @author dongnan
+ * @version 1.0.0
  */
-public class MainObjectFinder {
+public class Constants {
+
+    /** Constant <code>NETWORK_INFO="system"</code> */
+    public static final String NETWORK_INFO     = "networkInfo";
+
+    /** Constant <code>LOCAL_IP="localIP"</code> */
+    public static final String LOCAL_IP         = "localIP";
+
+    /** Constant <code>LOCAL_HOST_NAME="localHostName"</code> */
+    public static final String LOCAL_HOST_NAME  = "localHostName";
+
+    /** Constant <code>LOCAL_HOST_NAME="localHostName"</code> */
+    public static final String DEFAULT_BASE_ENV = "dev";
 }
