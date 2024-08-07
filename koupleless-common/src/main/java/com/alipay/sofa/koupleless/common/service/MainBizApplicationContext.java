@@ -43,6 +43,12 @@ public class MainBizApplicationContext {
         bizRuntimeContext.setMainBizApplicationContext(new MainBizApplicationContext());
     }
 
+    public static MainBizApplicationContext get() {
+        BizRuntimeContext bizRuntimeContext = BizRuntimeContextRegistry
+            .getBizRuntimeContextByClassLoader(Thread.currentThread().getContextClassLoader());
+        return bizRuntimeContext.getMainBizApplicationContext();
+    }
+
     public Object getObject(String key) {
         return objectMap.get(key);
     }
@@ -52,15 +58,23 @@ public class MainBizApplicationContext {
             .copyOf(typeMap.getOrDefault(type, new ConcurrentHashMap<>()));
     }
 
-    public void register(Object obj) {
-        String key = obj.getClass().getName();
-        register(key, obj);
-        register(obj.getClass(), key, obj);
+    public static void register(Object obj) {
+        get().doRegister(obj.getClass().getName(), obj);
+    }
+
+    public static void register(String key, Object obj) {
+        get().doRegister(obj.getClass().getName(), obj);
+        get().doRegister(key, obj);
+    }
+
+    private void doRegister(String key, Object obj) {
+        innerRegister(key, obj);
+        innerRegister(obj.getClass(), key, obj);
 
         Class<?>[] interfaces = obj.getClass().getInterfaces();
-        Arrays.stream(interfaces).forEach(i -> register(i, key, obj));
+        Arrays.stream(interfaces).forEach(i -> innerRegister(i, key, obj));
 
-        getSuperClasses(obj.getClass()).forEach(i -> register(i, key, obj));
+        getSuperClasses(obj.getClass()).forEach(i -> innerRegister(i, key, obj));
     }
 
     /**
@@ -69,7 +83,7 @@ public class MainBizApplicationContext {
      * @param key a {@link java.lang.String} object
      * @param obj a Object object
      */
-    private void register(String key, Object obj) {
+    private void innerRegister(String key, Object obj) {
         objectMap.put(key, obj);
     }
 
@@ -79,7 +93,7 @@ public class MainBizApplicationContext {
      * @param key a {@link java.lang.String} object
      * @param obj a Object object
      */
-    private void register(Class<?> type, String key, Object obj) {
+    private void innerRegister(Class<?> type, String key, Object obj) {
         Map<String, Object> map = typeMap.getOrDefault(type, new ConcurrentHashMap<>());
         map.put(key, obj);
         typeMap.put(type, map);
