@@ -28,6 +28,7 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.License;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -39,17 +40,13 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,6 +88,9 @@ public class KouplelessBasePackageFacadeMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "true")
     private String                             cleanAfterPackageFacade;
+
+    @Parameter(defaultValue = "17")
+    private String                             jvmTarget;
 
     private static final List<JVMFileTypeEnum> SUPPORT_FILE_TYPE_TO_COPY = Stream.of(JAVA)
         .collect(Collectors.toList());
@@ -167,6 +167,11 @@ public class KouplelessBasePackageFacadeMojo extends AbstractMojo {
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         pom.setLicenses(Collections.singletonList(license));
 
+        // 配置 properties
+        Properties properties = this.mavenProject.getProperties();
+        properties.putIfAbsent("maven-source-plugin.version", "3.2.1");
+        pom.setProperties(properties);
+
         // 配置依赖，全都设置成 provided
         Set<ArtifactItem> baseModuleArtifacts = getAllBundleArtifact(this.mavenProject);
         getLog().info("find maven module of base: " + baseModuleArtifacts);
@@ -192,6 +197,13 @@ public class KouplelessBasePackageFacadeMojo extends AbstractMojo {
             this.getClass().getClassLoader().getResourceAsStream("base-facade-pom-template.xml"));
         Build build = baseFacadePomTemplate.getBuild().clone();
         pom.setBuild(build);
+
+        // 配置 maven-compiler-plugin 中的 jdk 版本
+        Plugin mavenCompilerPlugin = build.getPlugins().stream()
+            .filter(it -> it.getArtifactId().equals("maven-compiler-plugin")).findFirst().get();
+        Xpp3Dom mavenCompilerConfig = (Xpp3Dom) mavenCompilerPlugin.getConfiguration();
+        mavenCompilerConfig.getChild("source").setValue(jvmTarget);
+        mavenCompilerConfig.getChild("target").setValue(jvmTarget);
 
         MavenUtils.writePomModel(getPomFileOfBundle(facadeRootDir), pom);
     }
